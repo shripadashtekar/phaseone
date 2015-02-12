@@ -1,7 +1,5 @@
 #include <stdio.h>
 #include<string>
-#include<iostream>
-#include<stdlib.h>
 #include<fstream>
 using namespace std;
 ifstream in;
@@ -9,8 +7,9 @@ ofstream out;
 string line;
 int cnt=0,i=0,j=0;
 
-class memory {
-public:
+class memory
+{
+private:
     char m[100][4];
     
 public:
@@ -25,6 +24,7 @@ public:
         string temp="";
         for(int i=0;i<4;i++)
             temp=temp+m[position][i];
+        
         return temp;
     }
     
@@ -48,30 +48,27 @@ public:
 
                 m[location][j]=card[cnt];
                 cnt++;
-                //out<<m[location][j];
             }
             location++;
            
         }
         i=j=cnt=0;
-       // out<<endl;
         
     }
     
     void putdatafrommemory(int location)
     {
-        //out<<"executed"<<location<<endl;
         string temp="";
         for(i=0;i<10;i++)
         {
             temp.clear();
             temp=getmem(location);
+            
             for(j=0;j<4;j++)
             {
-                if(temp[j]=='\0')
+                if(temp[j]=='\0'||temp[j]=='0')
                     break;
-                else if(temp[j]=='0')
-                    out<<" ";
+                
                 else
                     out<<temp[j];
             
@@ -87,23 +84,23 @@ public:
 
 class cpu
 {
+    
 private:
-    char IR[4],IC[2],R[4],C,terminated;             //Declaration of variables IC, R, IR, C;
+    char IR[4],IC[2],R[4],C,terminated;
     int returnedIC,returnedconvIR,returnedconvR,ctemp,SI;
     string returnedIR,returnedR,temp,operand,opcode,temp1;
     
 public:
    
+    void setIC(int val)             //seperate digits and store in IC by converting it into character;
     
-    void setIC(int val)     //seperate digits and store in IC by converting it into character;
-    
-        {
-            int y=val % 10;
-            IC[1]=y+'0';
-            int x=val/10;
-            IC[0]=x+'0';
+    {
+        int y=val % 10;
+        IC[1]=y+'0';
+        int x=val/10;
+        IC[0]=x+'0';
            
-        }
+    }
     
     int stringtoint(string s)
     {
@@ -111,14 +108,14 @@ public:
         return val;
     }
     
-    int getIC() //extract the characters, convert to a number and return
+    int getIC()                     //extract the characters, convert to a number and return
     {
         int val=((int)IC[0]-'0')*10+((int)IC[1]-'0');
         return val;
         
     }
     
-    void setIR(int position) // get from mem and store in IR
+    void setIR(int position)        // get from mem and store in IR
     {
         string temp="";
         temp=mem.getmem(position);
@@ -156,7 +153,7 @@ public:
         
     }
    
-    void setR(string temp)        // load into register from memory;
+    void setR(string temp)          // load into register from memory;
 
     {
         R[0]=temp[0];
@@ -178,6 +175,8 @@ public:
     void  StartExecution()
     {
         setIC(0);
+        terminated='F';
+
         while (terminated!='T')
         {
             returnedIC=getIC();
@@ -189,23 +188,18 @@ public:
             ctemp=stringtoint(operand);
             if(opcode.find("GD")!=-1)
             {
-             //   out<<"getdata called"<<endl;
-
-                SI=1;
+                 SI=1;
                  mos();
                 
             }
             if(opcode.find("PD")!=-1)
             {
-               // out<<"putdata called"<<endl;
-                SI=2;
+                 SI=2;
                  mos();
                 
             }
             if(opcode.find("LR")!=-1)
             {
-               // out<<"LR called"<<ctemp<<endl;
-
                 temp=mem.getmem(ctemp);
                 setR(temp);
             
@@ -213,8 +207,6 @@ public:
             
             if(opcode.find("SR")!=-1)
             {
-                //out<<"SR called"<<endl;
-
                 temp=getR();
                 mem.setmem(temp,ctemp);
                 
@@ -222,8 +214,6 @@ public:
             
             if(opcode.find("CR")!=-1)
             {
-                //out<<"CR called"<<endl;
-
                 temp=getR();
                 temp1=mem.getmem(ctemp);
                 if(temp==temp1)
@@ -240,8 +230,6 @@ public:
             
             if(opcode.find("BT")!=-1)
             {
-                //out<<"BT called"<<endl;
-
                 if(C=='T')
                 setIC(ctemp);
                 
@@ -249,9 +237,7 @@ public:
             
             if(opcode.find("H")!=-1)
             {
-                //out<<"H called"<<endl;
-
-                SI=3;
+                 SI=3;
                  mos();
             }
             
@@ -275,21 +261,13 @@ public:
                     getline(in,line);
                     mem.StoreCardInMemory(line,(ctemp/10)*10);
                     break;
-               
-     
-            
-            case 2://out<<"PDCALL"<<endl;
-                    mem.putdatafrommemory((ctemp/10)*10);
+    
+            case 2:mem.putdatafrommemory((ctemp/10)*10);
                    break;
-                
-                
-            
-        case 3: terminated='T';
-                out<<"-------------------------------------------------------------"<<endl<<endl;
-                //terminated='F';
-                //C='F';
-                //SI=0;
-                break;
+        
+            case 3:terminated='T';
+                   out<<"-------------------------------------------------------------"<<endl;
+                   break;
         }
         
         
@@ -301,8 +279,8 @@ int main()
 {
     
     int memcnt=0;
-    in.open("ip.c");
-    out.open("op.c");
+    in.open("ip.txt");
+    out.open("op.txt");
     
     while(!(in.eof()))
     {
@@ -311,7 +289,7 @@ int main()
         if(line.find("$AMJ")!=-1)
         {
             mem.resetmem();
-            
+            continue;
 
         }
         
@@ -323,6 +301,7 @@ int main()
         
         else if(line.find("END")!=-1)
         {
+            memcnt=0;
             continue;
         }
         
@@ -330,19 +309,10 @@ int main()
         {
             mem.StoreCardInMemory(line,memcnt);
             memcnt=memcnt+10;
-           // memcnt=memcnt+line.length()/4;
         }
         
     }
-    
-   /* for (i=0; i<100; i++)
-    {
-        for(j=0;j<4;j++)
-    {
-        cout<<mem.m[i][j];
-    }
-        cout<<endl;
-    }*/
+   
     in.close();
     out.close();
     return 0;
