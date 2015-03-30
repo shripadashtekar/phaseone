@@ -9,13 +9,65 @@ DATE OF Submission: 13 February 2015
 #include <stdio.h>
 #include<string>
 #include<fstream>
+#include<string.h>
+#include<iostream>
+#include<cstdlib>
+#include<sstream>
+
 using namespace std;
 ifstream in;
 ofstream out;
-string line;
-int cnt=0,i=0,j=0;
+string line,pid;
+int cnt=0,i=0,j=0,TLL,TTL,LLC,TLC,terminate_code;
 int SI,PI,TI,page_table_ptr;
 bool occupied_pages[30];
+
+class pcb
+{
+private:
+    int returnedIC;
+    
+public:
+    int s_to_i(string operand)
+    {
+        if(operand[0]>='0' && operand[0]<='9' && operand[1]>='0' && operand[1]<='9')
+            return ((int)operand[0]-48)*10+((int)operand[1]-48);
+        return -1;
+    }
+    
+    void initializepcb(string length)
+    {
+        pid=length.substr(0,4);
+        TTL=s_to_i(length.substr(4,2))*100+s_to_i(length.substr(6,2));
+        TLL=s_to_i(length.substr(8,2))*100+s_to_i(length.substr(10,2));
+        LLC=0;TLC=0;terminate_code=0;
+    }
+    
+    
+    int allocatepage()
+    {
+        int page_no=rand()%30;
+        while(occupied_pages[page_no]==true)
+            page_no=rand()%30;
+        occupied_pages[page_no]=true;
+        return page_no;
+        
+    }
+    
+    void initializepagetable(int row_num,int page_no)
+    {
+        ostringstream temp;
+        temp << page_no;
+        string table_entry;
+        if(page_no<10)
+            table_entry="$10"+temp.str();
+        else
+            table_entry="$1"+temp.str();
+        mem.setmem(table_entry,page_table_ptr+row_num);
+    }
+    
+    
+}pcbobj;
 
 class memory
 {
@@ -54,15 +106,15 @@ public:
     {
         
         string word="";
-        int page_no=pcbobj.allocate_page();
-        initializepagetable(location, page_no);
+        int page_no=pcbobj.allocatepage();
+        pcbobj.initializepagetable(location, page_no);
         page_no*=10;
 
         for(i=0;i<card.length();i++)
         {
             for(j=0;j<4;j++)
             {
-                word+=s[i+j];
+                word+=card[i+j];
             }
             setmem(word,page_no);
             page_no++;
@@ -99,6 +151,9 @@ public:
     
 }mem;
 
+
+
+
 class cpu
 {
     
@@ -134,6 +189,7 @@ public:
     
     void setIR(int position)        // get from mem and store in IR
     {
+        
         string temp="";
         temp=mem.getmem(position);
         for(int i=0;i<4;i++)
@@ -157,9 +213,12 @@ public:
         
     }
    
-    void setR(string temp)          // load into register from memory;
+    void setR(int pos)          // load into register from memory;
 
     {
+        string returned_value="";
+        returned_value=mem.getmem(pos);
+
         R[0]=temp[0];
         R[1]=temp[1];
         R[2]=temp[2];
@@ -185,7 +244,7 @@ public:
     int translateaddress(int virtualaddress)
     {
         int page=page_table_ptr+(virtualaddress/10);
-        string value_page=m_obj.getmem(page);
+        string value_page=mem.getmem(page);
         if(value_page[1]=='$')
         {
             PI=3;
@@ -193,6 +252,17 @@ public:
         }
         value_page=value_page.substr(2,2);
         return (s_to_i(value_page)*10+(virtualaddress%10));
+    }
+    
+    int translateaddress(string op)
+    {
+        if(s_to_i(op)==-1)
+        {
+            PI=2;
+            return -2;
+        }
+        else
+            translateaddress(s_to_i(op));
     }
     
     void  StartExecution()
@@ -214,9 +284,9 @@ public:
             opcode=returnedIR.substr(0,2);
             operand=returnedIR.substr(2,2);
             ctemp=stringtoint(operand);
-            pos=address_tranlation(s_to_i(operand));
+            pos=translateaddress(s_to_i(operand));
             
-            if(address_tranlation(operand)!=-2 || !(operand.compare("rr")))
+            if(translateaddress(operand)!=-2 || !(operand.compare("rr")))
             {
 
                 if(opcode.find("GD")!=-1)
@@ -318,7 +388,7 @@ public:
                     TLC++;
                     returnedIR='H';
                     SI=3;
-                    run_mos='T'
+                    run_mos='T';
                  
                 }
             }
@@ -413,7 +483,7 @@ public:
             //put the data from memory into the file specified
             else
             {
-                int pos=address_tranlation(s_to_i(operand)),flag=0;
+                int pos=translateaddress(s_to_i(operand)),flag=0;
                 pos=(pos/10)*10;
                 string ans="",temp="";
                 for(int i=pos;i<pos+10;i++)
@@ -461,7 +531,7 @@ public:
         
         else if(TI==0 && PI==3)
         {
-            if(!(opreator.compare("GD")) || !(opreator.compare("SR")))
+            if(!(opcode.compare("GD")) || !(opcode.compare("SR")))
             {
                 int page_no=pcbobj.allocatepage();
                 pcbobj.initializepagetable((s_to_i(operand))/10,page_no);
@@ -493,7 +563,7 @@ public:
         }
         if(terminate=='T')
         {
-            out<<p_id<<" ";
+            out<<pid<<" ";
             switch(terminate_code)
             {
                 case 0:out<<"NO ERROR\n";
@@ -522,60 +592,14 @@ public:
 
         
         
-    }
+    
 
 }cpuobj;
 
-class pcb
-{
-private:
-    int em,TLL,TTL,LLC,TLC,returnedIC;
-    string pid;
 
-    int s_to_i(string operand)
-    {
-        if(operand[0]>='0' && operand[0]<='9' && operand[1]>='0' && operand[1]<='9')
-            return ((int)operand[0]-48)*10+((int)operand[1]-48);
-        return -1;
-    }
-    
-    void initializepcb(string length)
-    {
-        pid=length.substr(0,4);
-        TTL=s_to_i(length.substr(4,2))*100+s_to_i(length.substr(6,2));
-        TLL=s_to_i(length.substr(8,2))*100+s_to_i(length.substr(10,2));
-        LLC=0;TLC=0;em=0;
-    }
-    
-    
-    int allocatepage()
-    {
-        int page_no=rand()%30;
-        while(occupied_pages[page_no]==true)
-            page_no=rand()%30;
-        occupied_pages[page_no]=true;
-        return page_no;
-        
-    }
-    
-    void initializepagetable(int row_num,int page_no)
-    {
-        ostringstream temp;
-        temp << page_no;
-        string table_entry;
-        if(page_no<10)
-            table_entry="$10"+temp.str();
-        else
-            table_entry="$1"+temp.str();
-        mem.setmem(table_entry,page_table_ptr+row_num);
-    }
-    
-    
-}pcbobj;
 
 int main()
 {
-    
     int memcnt=0;
     in.open("ip.txt");
     out.open("op.txt");
@@ -594,7 +618,7 @@ int main()
             memcnt=0;
             pcbobj.initializepcb(in.substr(4,12));
             pcbobj.allocatepage();
-            pcbobj.initializepagetable();
+            //pcbobj.initializepagetable();
             continue;
 
         }
