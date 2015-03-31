@@ -22,10 +22,13 @@ int cnt=0,i=0,j=0,TLL,TTL,LLC,TLC,terminate_code;
 int SI,PI,TI,page_table_ptr;
 bool occupied_pages[30];
 
+
+
 class pcb
 {
 private:
     int returnedIC;
+
     
 public:
     int s_to_i(string operand)
@@ -54,6 +57,15 @@ public:
         
     }
     
+   
+}pcbobj;
+
+class memory
+{
+private:
+    char m[300][4];
+    
+public:
     void initializepagetable(int row_num,int page_no)
     {
         ostringstream temp;
@@ -63,18 +75,10 @@ public:
             table_entry="$10"+temp.str();
         else
             table_entry="$1"+temp.str();
-        mem.setmem(table_entry,page_table_ptr+row_num);
+        setmem(table_entry,page_table_ptr+row_num);
     }
     
     
-}pcbobj;
-
-class memory
-{
-private:
-    char m[300][4];
-    
-public:
     void resetmem()
     {
      
@@ -107,7 +111,7 @@ public:
         
         string word="";
         int page_no=pcbobj.allocatepage();
-        pcbobj.initializepagetable(location, page_no);
+        initializepagetable(location, page_no);
         page_no*=10;
 
         for(i=0;i<card.length();i++)
@@ -534,7 +538,7 @@ public:
             if(!(opcode.compare("GD")) || !(opcode.compare("SR")))
             {
                 int page_no=pcbobj.allocatepage();
-                pcbobj.initializepagetable((s_to_i(operand))/10,page_no);
+                mem.initializepagetable((s_to_i(operand))/10,page_no);
                 setIC(getIC()-1);
             }
             else
@@ -609,14 +613,14 @@ int main()
         line.clear();
         getline(in,line);
         
-        if(in.empty())
+        if(line.empty())
         break;
         
         if(line.find("$AMJ")!=-1)
         {
             mem.resetmem();
             memcnt=0;
-            pcbobj.initializepcb(in.substr(4,12));
+            pcbobj.initializepcb(line.substr(4,12));
             pcbobj.allocatepage();
             //pcbobj.initializepagetable();
             continue;
