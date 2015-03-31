@@ -103,7 +103,11 @@ public:
     {
         
         for(int i=0;i<4;i++)
+        {
             m[position][i]=s[i];
+            //cout<<m[position][i];
+        }
+        
     }
     
     void StoreCardInMemory(string card, int location)
@@ -114,7 +118,7 @@ public:
         initializepagetable(location, page_no);
         page_no*=10;
 
-        for(i=0;i<card.length();i++)
+        for(i=0;i<card.length();i+=4)
         {
             for(j=0;j<4;j++)
             {
@@ -125,33 +129,13 @@ public:
             word="";
            
         }
-       
+       //cout<<endl;
         
     }
     
-    void putdatafrommemory(int location)
-    {
-        string temp="";
-        for(i=0;i<300;i++)
-        {
-            temp.clear();
-            temp=getmem(location);
-            
-            for(j=0;j<4;j++)
-            {
-                if(temp[j]=='\0'||temp[j]=='0')
-                    break;
-                
-                else
-                    out<<temp[j];
-            
-            }
-            
-            location++;
-            
-        }
-        out<<endl;
-    }
+
+    
+    
     
 }mem;
 
@@ -220,8 +204,8 @@ public:
     void setR(int pos)          // load into register from memory;
 
     {
-        string returned_value="";
-        returned_value=mem.getmem(pos);
+        string temp="";
+        temp=mem.getmem(pos);
 
         R[0]=temp[0];
         R[1]=temp[1];
@@ -495,7 +479,7 @@ public:
                     temp=mem.getmem(i);
                     for(int j=0;j<4;j++)
                     {
-                        if(temp[j]=='\0' || temp[j]=='$')
+                        if(temp[j]=='\0' || temp[j]=='0')
                         {
                             break;
                             flag=1;
@@ -530,7 +514,7 @@ public:
         else if(TI==0 && PI==2)
         {
             terminate_code=5;
-            terminate=true;
+            terminate='T';
         }
         
         else if(TI==0 && PI==3)
